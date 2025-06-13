@@ -28,19 +28,19 @@ jobs:
           git merge --ff-only upstream/main
           git push origin master
 
-      # Rebase the patched-main branch onto the latest master
-      - name: Rebase patched-main
+      # Rebase the kpler-patched-main branch onto the latest master
+      - name: Rebase kpler-patched-main
         run: |
-          git switch patched-main
+          git switch kpler-patched-main
           git rebase master
-          git push --force-with-lease origin patched-main
+          git push --force-with-lease origin kpler-patched-main
 
       # Create or update a *draft* PR just for visual diff / CI
       - name: Open or update review PR
         uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          branch: patched-main        # head
+          branch: kpler-patched-main        # head
           base: master               # base
           title: "🚀 Automated rebase of patched-main (review only)"
           body: |
