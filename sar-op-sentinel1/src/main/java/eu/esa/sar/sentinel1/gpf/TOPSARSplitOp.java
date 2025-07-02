@@ -101,7 +101,6 @@ public final class TOPSARSplitOp extends Operator {
             final InputProductValidator validator = new InputProductValidator(sourceProduct);
             validator.checkIfSARProduct();
             validator.checkIfSentinel1Product();
-            validator.checkIfMultiSwathTOPSARProduct();
             validator.checkProductType(new String[]{"SLC"});
             validator.checkAcquisitionMode(new String[]{"IW", "EW"});
 
@@ -113,6 +112,9 @@ public final class TOPSARSplitOp extends Operator {
 
             final Sentinel1Utils su = new Sentinel1Utils(sourceProduct);
             subSwathInfo = su.getSubSwath();
+            if (subSwathInfo != null && subSwathInfo.length > 1) {
+                validator.checkIfMultiSwathTOPSARProduct();
+            }
             for (int i = 0; i < subSwathInfo.length; i++) {
                 if (subSwathInfo[i].subSwathName.contains(subswath)) {
                     subSwathIndex = i + 1;
