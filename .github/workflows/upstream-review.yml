@@ -1,0 +1,56 @@
+name: Rebase patch & open review PR
+on:
+  schedule:                      # Tue & Fri, 12:00 UTC – change at will
+    - cron: '0 12 * * 2,5'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  review-pr:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }     # we need full history for rebase
+
+      # 0. fetch the real upstream
+      - name: Get upstream commits
+        run: |
+          git remote add upstream https://github.com/senbox-org/microwave-toolbox.git
+          git fetch --prune upstream
+
+      # 1. make a fresh branch copied from kpler-patched-main
+      - name: Create review branch
+        id: mkbranch
+        run: |
+          ts=$(date -u '+%Y%m%d-%H%M%S')          
+          git switch -c review-${ts} kpler-patched-main 
+          echo "ts=$ts" >> $GITHUB_OUTPUT
+
+      #  2. rebase that branch onto the new upstream
+      - name: Rebase onto latest upstream
+        run: |
+          git rebase upstream/master
+
+      # 3. push it
+      - name: Push review branch
+        run: |
+          git push -u origin HEAD
+
+      # 4. open a *new* PR every run
+      - name: Open review PR
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          base: kpler-patched-main
+          branch: review
+          branch-suffix: timestamp
+          title: "Upstream rebase ${{ steps.mkbranch.outputs.ts }}"
+          body: |
+            Automated rebase of **kpler-patched-main** onto `senbox-org/microwave-toolbox@master`.
+            Review the diff → merge if happy → or close to skip this batch.
+          draft: true                        # stays out of the merge queue
+          delete-branch: true                # cleans up after merge
+          labels: upstream, do-not-merge
